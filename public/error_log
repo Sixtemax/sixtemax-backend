@@ -1,0 +1,5 @@
+[29-Jun-2025 00:31:13 UTC] PHP Fatal error:  Trait "Livewire\Features\SupportBrowserEvents\DispatchesBrowserEvents" not found in /home/hookdm/sixtemax.com/app/Livewire/Terceros/TerceroForm.php on line 9
+[29-Jun-2025 00:31:17 UTC] PHP Fatal error:  Trait "Livewire\Features\SupportBrowserEvents\DispatchesBrowserEvents" not found in /home/hookdm/sixtemax.com/app/Livewire/Terceros/TerceroForm.php on line 9
+[29-Jun-2025 00:32:55 UTC] PHP Fatal error:  Trait "Livewire\Features\SupportBrowserEvents\DispatchesBrowserEvents" not found in /home/hookdm/sixtemax.com/app/Livewire/Terceros/TerceroForm.php on line 10
+[29-Jun-2025 01:41:14 UTC] PHP Fatal error:  Namespace declaration statement has to be the very first statement or after any declare call in the script in /home/hookdm/sixtemax.com/app/Livewire/Terceros/TerceroForm.php on line 4
+[30-Jun-2025 00:50:26 UTC] PHP Fatal error:  Assignments can only happen to writable values in /home/hookdm/sixtemax.com/storage/framework/views/183d4b8fc270fcf592b34c20f5fa2ccb.php on line 50
