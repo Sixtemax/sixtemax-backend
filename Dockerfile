@@ -1,31 +1,36 @@
-# Usa la imagen oficial de PHP con Apache
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
-# Instala dependencias del sistema y extensiones necesarias
+# Instalar extensiones necesarias
 RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpng-dev \
+    libjpeg-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
     git \
     curl \
     libpq-dev \
-    unzip \
-    zip \
-    libzip-dev \
-    && docker-php-ext-install pdo pdo_pgsql zip
+    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
 
-# Habilita mod_rewrite de Apache
-RUN a2enmod rewrite
-
-# Copia archivos del proyecto al contenedor
-COPY . /var/www/html
-
-# Establece el directorio de trabajo
-WORKDIR /var/www/html
-
-# Copia y ejecuta Composer
+# Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Crear directorio de trabajo
+WORKDIR /var/www
+
+# Copiar todo el proyecto
+COPY . .
+
+# Instalar dependencias
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Permisos a storage y bootstrap
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Dar permisos
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage
 
-# Corre migraciones automáticamente
-CMD php artisan migrate --force && apache2-foreground
+# Ejecutar migraciones limpias
+RUN php artisan config:clear && php artisan migrate:fresh || true
+
+CMD ["php-fpm"]
