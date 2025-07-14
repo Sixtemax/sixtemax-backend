@@ -1,10 +1,10 @@
-# Imagen base con PHP + Apache
+# Usa PHP 8.2 con Apache
 FROM php:8.2-apache
 
-# Habilitar mod_rewrite para URLs amigables
+# Habilitar mod_rewrite para Laravel
 RUN a2enmod rewrite
 
-# Instalar extensiones requeridas por Laravel
+# Instala extensiones necesarias para Laravel
 RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
@@ -15,35 +15,32 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath
 
-# Instalar Composer
+# Instala Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copiar todo el proyecto Laravel
+# Copiar el proyecto al contenedor
 COPY . /var/www/html
 
-# Establecer el directorio de trabajo
+# Establecer directorio de trabajo
 WORKDIR /var/www/html
 
-# Apuntar Apache a la carpeta public/
+# Cambiar el DocumentRoot de Apache a /public
 RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 
 # Dar permisos a carpetas necesarias
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Instalar dependencias de Laravel
+# Instalar dependencias PHP con Composer
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Limpiar y cachear configuración
+# Limpiar y cachear config, rutas, vistas
 RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear && \
     php artisan config:cache
 
-# Ejecutar migraciones automáticamente
-RUN php artisan migrate:fresh --force
-
-# Exponer el puerto 8080 (usado por php artisan serve si lo necesitaras)
+# Exponer el puerto HTTP
 EXPOSE 80
 
-# Comando por defecto (Apache)
+# Iniciar Apache
 CMD ["apache2-foreground"]
