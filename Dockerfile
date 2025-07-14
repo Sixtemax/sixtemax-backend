@@ -1,38 +1,24 @@
-# Imagen base de PHP con FPM
 FROM php:8.2-fpm
 
-# Instalar extensiones necesarias y herramientas básicas
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpng-dev \
-    libjpeg-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    git \
-    curl \
-    libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+    git curl zip unzip libpq-dev libzip-dev libonig-dev libxml2-dev \
+    && docker-php-ext-install pdo pdo_pgsql zip
 
-# Instalar Composer desde contenedor oficial
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Instalar Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Crear directorio de trabajo
+# Crear y configurar el directorio de la app
 WORKDIR /var/www
 
-# Copiar todos los archivos del proyecto
+# Copiar archivos del proyecto
 COPY . .
 
-# Instalar dependencias de Laravel
+# Instalar dependencias de PHP
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Dar permisos adecuados a carpetas necesarias
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
+# Asignar permisos
+RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www
 
-# Limpiar configuración previa y ejecutar migraciones (sin borrar tablas)
-RUN php artisan config:clear && php artisan migrate --force || true
-
-# Servir Laravel desde el puerto 8080 (Render lo detecta)
-CMD php -S 0.0.0.0:8080 -t public
+# Ejecutar migraciones automáticas al iniciar
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080
