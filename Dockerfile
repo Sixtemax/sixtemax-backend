@@ -1,36 +1,41 @@
-# Usa PHP 8.2 con Apache
+# Imagen base oficial de PHP con Apache
 FROM php:8.2-apache
 
-# Instala dependencias necesarias para Laravel
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    unzip \
+    zip \
     libonig-dev \
     libxml2-dev \
-    zip \
-    unzip \
-    curl \
-    git \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath
+    libzip-dev \
+    libpq-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && docker-php-ext-install pdo pdo_mysql zip
 
-# Habilita mod_rewrite de Apache (necesario para rutas Laravel)
+# Habilitar mod_rewrite para Laravel
 RUN a2enmod rewrite
 
-# Instala Composer (desde imagen oficial de Composer)
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Copia el código del proyecto
+# Copiar los archivos del proyecto a la carpeta del servidor
 COPY . /var/www/html
 
-# Define el directorio de trabajo
+# Establecer directorio de trabajo
 WORKDIR /var/www/html
 
-# Cambia el DocumentRoot de Apache para que apunte a /public
-RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+# Instalar Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Establece permisos para Laravel
+# Instalar dependencias de PHP/Laravel
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
+# Asignar permisos a las carpetas necesarias
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Instala dependencias de PHP vía Composer
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-# Expone el puerto 80
+# Exponer el puerto del servidor
 EXPOSE 80
+
+# Comando de inicio: ejecutar migraciones y luego iniciar Apache
+CMD php artisan migrate --force && apache2-foreground
