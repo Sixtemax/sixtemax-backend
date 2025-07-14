@@ -1,24 +1,49 @@
-FROM php:8.2-fpm
+# Imagen base con PHP + Apache
+FROM php:8.2-apache
 
-# Instalar dependencias del sistema
+# Habilitar mod_rewrite para URLs amigables
+RUN a2enmod rewrite
+
+# Instalar extensiones requeridas por Laravel
 RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpq-dev libzip-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install pdo pdo_pgsql zip
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    curl \
+    git \
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath
 
 # Instalar Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Crear y configurar el directorio de la app
-WORKDIR /var/www
+# Copiar todo el proyecto Laravel
+COPY . /var/www/html
 
-# Copiar archivos del proyecto
-COPY . .
+# Establecer el directorio de trabajo
+WORKDIR /var/www/html
 
-# Instalar dependencias de PHP
+# Apuntar Apache a la carpeta public/
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+
+# Dar permisos a carpetas necesarias
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+# Instalar dependencias de Laravel
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Asignar permisos
-RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www
+# Limpiar y cachear configuración
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
+    php artisan config:cache
 
-# Ejecutar migraciones automáticas al iniciar
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080
+# Ejecutar migraciones automáticamente
+RUN php artisan migrate:fresh --force
+
+# Exponer el puerto 8080 (usado por php artisan serve si lo necesitaras)
+EXPOSE 80
+
+# Comando por defecto (Apache)
+CMD ["apache2-foreground"]

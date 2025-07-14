@@ -33,7 +33,8 @@ return new class extends Migration
         $table->string('direccion')->nullable();
         $table->string('ciudad')->nullable();
         $table->string('logo')->nullable(); // Si quieres mostrarlo en PDFs
-        $table->text('notas_factura')->nullable(); // Para pie de factura
+        $table->text('notas_factura')->nullable(); 
+        $table->boolean('activo')->default(true);// Para pie de factura
         $table->timestamps();
 });
 
