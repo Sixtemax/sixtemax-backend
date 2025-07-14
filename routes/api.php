@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\TerceroController;
+use App\Http\Controllers\API\TerceroController;
 
 
 Route::middleware('api')->prefix('terceros')->group(function () {
