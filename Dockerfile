@@ -1,41 +1,31 @@
-# Imagen base oficial de PHP con Apache
+# Usa la imagen oficial de PHP con Apache
 FROM php:8.2-apache
 
-# Instalar dependencias del sistema
+# Instala dependencias del sistema y extensiones necesarias
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    libpq-dev \
     unzip \
     zip \
-    libonig-dev \
-    libxml2-dev \
     libzip-dev \
-    libpq-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    && docker-php-ext-install pdo pdo_mysql zip
+    && docker-php-ext-install pdo pdo_pgsql zip
 
-# Habilitar mod_rewrite para Laravel
+# Habilita mod_rewrite de Apache
 RUN a2enmod rewrite
 
-# Copiar los archivos del proyecto a la carpeta del servidor
+# Copia archivos del proyecto al contenedor
 COPY . /var/www/html
 
-# Establecer directorio de trabajo
+# Establece el directorio de trabajo
 WORKDIR /var/www/html
 
-# Instalar Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Copia y ejecuta Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Instalar dependencias de PHP/Laravel
-RUN composer install --no-interaction --optimize-autoloader --no-dev
-
-# Asignar permisos a las carpetas necesarias
+# Permisos a storage y bootstrap
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Exponer el puerto del servidor
-EXPOSE 80
-
-# Comando de inicio: ejecutar migraciones y luego iniciar Apache
+# Corre migraciones automáticamente
 CMD php artisan migrate --force && apache2-foreground
